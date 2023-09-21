@@ -41,6 +41,7 @@ var (
 	FlagExport        string
 	FlagStdoutPath    string
 	FlagStderrPath    string
+	FlagDependency    string
 
 	FlagConfigFilePath string
 
@@ -87,4 +88,5 @@ func init() {
 	RootCmd.Flags().StringVarP(&FlagStderrPath, "error", "e", "", "Redirection path of standard error of the script")
 	RootCmd.Flags().StringVar(&FlagMailType, "mail-type", "", "Notify user by mail when certain events occur")
 	RootCmd.Flags().StringVar(&FlagMailUser, "mail-user", "", "Mail address of the notification receiver")
+	RootCmd.Flags().StringVarP(&FlagDependency, "dependency", "d", "", "Defer the start of this job until the specified dependencies have been satisfied.")
 }
