@@ -303,17 +303,27 @@ func ParseTimeStrToSeconds(time string) (int64, error) {
 
 func HoldReleaseJobs(jobs string, hold bool) util.CraneCmdError {
 	jobIdStrSplit := strings.Split(jobs, ",")
+	craneError := util.ErrorSuccess
+	var job_list []uint64
 	for i := 0; i < len(jobIdStrSplit); i++ {
 		jobId64, err := strconv.ParseUint(jobIdStrSplit[i], 10, 32)
 		if err != nil {
 			fmt.Println("Invalid job Id: " + jobIdStrSplit[i])
-			os.Exit(1)
-		}
-		if err := HoldReleaseJob(uint32(jobId64), hold); err != util.ErrorSuccess {
-			return err
+			craneError = util.ErrorCmdArg
+		} else {
+			job_list = append(job_list, jobId64)
 		}
 	}
-	return util.ErrorSuccess
+	if craneError != util.ErrorSuccess {
+		return craneError
+	}
+	for _, jobId := range job_list {
+		err := HoldReleaseJob(uint32(jobId), hold)
+		if err != util.ErrorSuccess {
+			craneError = err
+		}
+	}
+	return craneError
 }
 
 func HoldReleaseJob(jobId uint32, hold bool) util.CraneCmdError {
@@ -350,7 +360,7 @@ func HoldReleaseJob(jobId uint32, hold bool) util.CraneCmdError {
 		return util.ErrorNetwork
 	}
 	if reply.Ok {
-		fmt.Printf(holdType+" job %v success\n", jobId)
+		fmt.Printf(holdType+" job %v success.\n", jobId)
 		return util.ErrorSuccess
 	} else {
 		fmt.Printf(holdType+" job %v failed: %s\n", jobId, reply.GetReason())
