@@ -34,6 +34,7 @@ var (
 	FlagQueryAll       bool
 	FlagTimeLimit      string
 	FlagPriority       float64
+	FlagHoldTime       string
 	FlagConfigFilePath string
 
 	RootCmd = &cobra.Command{
@@ -153,6 +154,28 @@ var (
 			}
 		},
 	}
+	holdCmd = &cobra.Command{
+		Use:   "hold [job_ids] [flags]",
+		Short: "prevent specified job from starting. ",
+		Long:  "",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := HoldReleaseJobs(args[0], true); err != util.ErrorSuccess {
+				os.Exit(err)
+			}
+		},
+	}
+	releaseCmd = &cobra.Command{
+		Use:   "release [job_ids]",
+		Short: "permit specified job to start. ",
+		Long:  "",
+		Args:  cobra.MaximumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := HoldReleaseJobs(args[0], false); err != util.ErrorSuccess {
+				os.Exit(err)
+			}
+		},
+	}
 )
 
 // ParseCmdArgs executes the root command.
@@ -195,4 +218,9 @@ func init() {
 			}
 		}
 	}
+	RootCmd.AddCommand(holdCmd)
+	{
+		holdCmd.Flags().StringVarP(&FlagHoldTime, "time", "t", "", "Specify the duration for a job which will be prevented from starting.")
+	}
+	RootCmd.AddCommand(releaseCmd)
 }
