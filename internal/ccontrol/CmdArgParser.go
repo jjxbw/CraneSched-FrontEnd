@@ -19,6 +19,7 @@ package ccontrol
 import (
 	"CraneFrontEnd/internal/util"
 	"os"
+	"regexp"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
@@ -155,10 +156,22 @@ var (
 		},
 	}
 	holdCmd = &cobra.Command{
-		Use:   "hold [job_ids] [flags]",
+		Use:   "hold [flags] job_id[,job_id...]",
 		Short: "prevent specified job from starting. ",
 		Long:  "",
-		Args:  cobra.MaximumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			err := cobra.ExactArgs(1)(cmd, args)
+			if err != nil {
+				return err
+			}
+			matched, _ := regexp.MatchString(`^([1-9][0-9]*)(,[1-9][0-9]*)*$`, args[0])
+			if !matched {
+				log.Error("job id list must follow the format " +
+					"<job_id> or '<job_id>,<job_id>,<job_id>...'")
+				os.Exit(util.ErrorCmdArg)
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := HoldReleaseJobs(args[0], true); err != util.ErrorSuccess {
 				os.Exit(err)
@@ -166,10 +179,22 @@ var (
 		},
 	}
 	releaseCmd = &cobra.Command{
-		Use:   "release [job_ids]",
+		Use:   "release [flags] job_id[,job_id...]",
 		Short: "permit specified job to start. ",
 		Long:  "",
-		Args:  cobra.MaximumNArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			err := cobra.ExactArgs(1)(cmd, args)
+			if err != nil {
+				return err
+			}
+			matched, _ := regexp.MatchString(`^([1-9][0-9]*)(,[1-9][0-9]*)*$`, args[0])
+			if !matched {
+				log.Error("job id list must follow the format " +
+					"<job_id> or '<job_id>,<job_id>,<job_id>...'")
+				os.Exit(util.ErrorCmdArg)
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := HoldReleaseJobs(args[0], false); err != util.ErrorSuccess {
 				os.Exit(err)
