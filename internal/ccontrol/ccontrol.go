@@ -352,6 +352,10 @@ func HoldReleaseJob(jobId uint32, hold bool) util.CraneCmdError {
 			log.Errorln(err)
 			return util.ErrorCmdArg
 		}
+		if seconds == 0 {
+			log.Errorln("Hold time must be greater than 0.")
+			return util.ErrorCmdArg
+		}
 		req.HoldTimeSeconds = seconds
 	}
 	reply, err := stub.ModifyTask(context.Background(), req)
