@@ -41,7 +41,7 @@ type CranedChannelKeeper struct {
 
 	taskIORequestChannelMtx sync.Mutex
 	// I/O message from Craned to Crun
-	taskIORequestChannelMapByTaskId map[uint32]chan *protos.StreamCforedTaskIORequest
+	taskIORequestChannelMapByTaskIdProcId map[uint32] /*taskId*/ map[uint32] /*ProcId*/ chan *protos.StreamCforedTaskIORequest
 }
 
 var gCranedChanKeeper *CranedChannelKeeper
@@ -50,7 +50,7 @@ func NewCranedChannelKeeper() *CranedChannelKeeper {
 	keeper := &CranedChannelKeeper{}
 	keeper.crunRequestChannelCV = sync.NewCond(&keeper.crunRequestChannelMtx)
 	keeper.crunRequestChannelMapByCranedId = make(map[string]chan *protos.StreamCrunRequest)
-	keeper.taskIORequestChannelMapByTaskId = make(map[uint32]chan *protos.StreamCforedTaskIORequest)
+	keeper.taskIORequestChannelMapByTaskIdProcId = make(map[uint32]map[uint32]chan *protos.StreamCforedTaskIORequest)
 	return keeper
 }
 
@@ -62,6 +62,7 @@ func (keeper *CranedChannelKeeper) cranedUpAndSetMsgToCranedChannel(cranedId str
 }
 
 func (keeper *CranedChannelKeeper) cranedDownAndRemoveChannelToCraned(cranedId string) {
+
 	keeper.crunRequestChannelMtx.Lock()
 	delete(keeper.crunRequestChannelMapByCranedId, cranedId)
 	keeper.crunRequestChannelMtx.Unlock()
@@ -99,26 +100,33 @@ func (keeper *CranedChannelKeeper) forwardCrunRequestToCranedChannels(request *p
 	keeper.crunRequestChannelMtx.Unlock()
 }
 
-func (keeper *CranedChannelKeeper) setRemoteIoToCrunChannel(taskId uint32, ioToCrunChannel chan *protos.StreamCforedTaskIORequest) {
+func (keeper *CranedChannelKeeper) setRemoteIoToCrunChannel(taskId uint32, procId uint32, ioToCrunChannel chan *protos.StreamCforedTaskIORequest) {
 	keeper.taskIORequestChannelMtx.Lock()
-	keeper.taskIORequestChannelMapByTaskId[taskId] = ioToCrunChannel
+	if _, exist := keeper.taskIORequestChannelMapByTaskIdProcId[taskId]; !exist {
+		keeper.taskIORequestChannelMapByTaskIdProcId[taskId] = make(map[uint32]chan *protos.StreamCforedTaskIORequest)
+	}
+	keeper.taskIORequestChannelMapByTaskIdProcId[taskId][procId] = ioToCrunChannel
 	keeper.taskIORequestChannelMtx.Unlock()
 }
 
-func (keeper *CranedChannelKeeper) forwardRemoteIoToCrun(taskId uint32, ioToCrun *protos.StreamCforedTaskIORequest) {
+func (keeper *CranedChannelKeeper) forwardRemoteIoToCrun(taskId uint32, procId uint32, ioToCrun *protos.StreamCforedTaskIORequest) {
 	keeper.taskIORequestChannelMtx.Lock()
-	channel, exist := keeper.taskIORequestChannelMapByTaskId[taskId]
+	channel, exist := keeper.taskIORequestChannelMapByTaskIdProcId[taskId][procId]
 	if exist {
 		channel <- ioToCrun
 	} else {
-		log.Warningf("Trying forward to I/O to an unknown crun of task #%d.", taskId)
+		log.Warningf("Trying forward to I/O to an unknown crun of task #%d proc.#%d", taskId, procId)
 	}
 	keeper.taskIORequestChannelMtx.Unlock()
 }
 
-func (keeper *CranedChannelKeeper) removeRemoteIoToCrunChannel(taskId uint32) {
+func (keeper *CranedChannelKeeper) removeRemoteIoToCrunChannel(taskId uint32, procId uint32) {
 	keeper.taskIORequestChannelMtx.Lock()
-	delete(keeper.taskIORequestChannelMapByTaskId, taskId)
+	delete(keeper.taskIORequestChannelMapByTaskIdProcId[taskId], procId)
+	if len(keeper.taskIORequestChannelMapByTaskIdProcId[taskId]) == 0 {
+		delete(keeper.taskIORequestChannelMapByTaskIdProcId, taskId)
+	}
+
 	keeper.taskIORequestChannelMtx.Unlock()
 }
 
@@ -249,6 +257,7 @@ CforedCranedStateMachineLoop:
 						// Todo: do something when craned down
 						switch err {
 						case io.EOF:
+
 							fallthrough
 						default:
 							state = CranedUnReg
@@ -258,9 +267,9 @@ CforedCranedStateMachineLoop:
 
 					log.Tracef("[Cfored<->Craned] Receive type %s", cranedReq.Type.String())
 					switch cranedReq.Type {
-					case protos.StreamCforedTaskIORequest_CRANED_TASK_OUTPUT:
-						payload := cranedReq.GetPayloadTaskOutputReq()
-						gCranedChanKeeper.forwardRemoteIoToCrun(payload.GetTaskId(), cranedReq)
+					case protos.StreamCforedTaskIORequest_CRANED_PROC_OUTPUT:
+						payload := cranedReq.GetPayloadProcOutputReq()
+						gCranedChanKeeper.forwardRemoteIoToCrun(payload.GetTaskId(), payload.GetProcId(), cranedReq)
 
 					case protos.StreamCforedTaskIORequest_CRANED_UNREGISTER:
 						reply = &protos.StreamCforedTaskIOReply{
@@ -290,13 +299,15 @@ CforedCranedStateMachineLoop:
 					case protos.StreamCrunRequest_TASK_IO_FORWARD:
 						payload := crunReq.GetPayloadTaskIoForwardReq()
 						taskId := payload.GetTaskId()
+						procId := payload.GetProcId()
 						msg := payload.GetMsg()
 						log.Debugf("[Cfored<->Craned] forwarding task %d input %s to craned %s", taskId, msg, cranedId)
 						reply = &protos.StreamCforedTaskIOReply{
 							Type: protos.StreamCforedTaskIOReply_CRANED_TASK_INPUT,
-							Payload: &protos.StreamCforedTaskIOReply_PayloadTaskInputReq{
-								PayloadTaskInputReq: &protos.StreamCforedTaskIOReply_CranedTaskInputReq{
+							Payload: &protos.StreamCforedTaskIOReply_PayloadProcInputReq{
+								PayloadProcInputReq: &protos.StreamCforedTaskIOReply_CranedProcInputReq{
 									TaskId: taskId,
+									ProcId: procId,
 									Msg:    msg,
 								},
 							},
