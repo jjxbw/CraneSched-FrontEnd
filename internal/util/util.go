@@ -27,7 +27,7 @@ import (
 
 type Config struct {
 	ControlMachine      string `yaml:"ControlMachine"`
-	CraneCtldListenPort string `yaml:"CraneCtldListenPort"`
+	CraneCtldListenPort string `yaml:"PublicServiceListenPort"`
 
 	UseTls             bool   `yaml:"UsePublicTls"`
 	ServerCertFilePath string `yaml:"PublicServerCertFilePath"`
