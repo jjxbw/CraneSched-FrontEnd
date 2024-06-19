@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	stub protos.CraneCtldClient
+	stub protos.CraneCtldPublicClient
 )
 
 func CancelTask(args []string) util.CraneCmdError {

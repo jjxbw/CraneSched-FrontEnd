@@ -25,7 +25,7 @@ import (
 )
 
 type GrpcCtldClient struct {
-	ctldClientStub   protos.CraneCtldClient
+	ctldClientStub   protos.CraneCtldPublicClient
 	ctldReplyChannel chan *protos.StreamCtldReply
 }
 

@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	stub protos.CraneCtldClient
+	stub protos.CraneCtldPublicClient
 )
 
 const (

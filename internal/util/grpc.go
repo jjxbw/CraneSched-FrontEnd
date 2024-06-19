@@ -100,9 +100,9 @@ func GetListenSocketByConfig(config *Config) (net.Listener, error) {
 	}
 }
 
-func GetStubToCtldByConfig(config *Config) protos.CraneCtldClient {
+func GetStubToCtldByConfig(config *Config) protos.CraneCtldPublicClient {
 	var serverAddr string
-	var stub protos.CraneCtldClient
+	var stub protos.CraneCtldPublicClient
 
 	if config.UseTls {
 		serverAddr = fmt.Sprintf("%s.%s:%s",
@@ -147,7 +147,7 @@ func GetStubToCtldByConfig(config *Config) protos.CraneCtldClient {
 			log.Fatal("Cannot connect to CraneCtld: " + err.Error())
 		}
 
-		stub = protos.NewCraneCtldClient(conn)
+		stub = protos.NewCraneCtldPublicClient(conn)
 	} else {
 		serverAddr = fmt.Sprintf("%s:%s", config.ControlMachine, config.CraneCtldListenPort)
 
@@ -156,7 +156,7 @@ func GetStubToCtldByConfig(config *Config) protos.CraneCtldClient {
 			log.Fatalf("Cannot connect to CraneCtld %s: %s", serverAddr, err.Error())
 		}
 
-		stub = protos.NewCraneCtldClient(conn)
+		stub = protos.NewCraneCtldPublicClient(conn)
 	}
 
 	return stub

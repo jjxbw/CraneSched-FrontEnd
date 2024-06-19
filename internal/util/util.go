@@ -29,11 +29,11 @@ type Config struct {
 	ControlMachine      string `yaml:"ControlMachine"`
 	CraneCtldListenPort string `yaml:"CraneCtldListenPort"`
 
-	UseTls             bool   `yaml:"UseTls"`
-	ServerCertFilePath string `yaml:"ServerCertFilePath"`
-	ServerKeyFilePath  string `yaml:"ServerKeyFilePath"`
-	CaCertFilePath     string `yaml:"CaCertFilePath"`
-	DomainSuffix       string `yaml:"DomainSuffix"`
+	UseTls             bool   `yaml:"UsePublicTls"`
+	ServerCertFilePath string `yaml:"PublicServerCertFilePath"`
+	ServerKeyFilePath  string `yaml:"PublicServerKeyFilePath"`
+	CaCertFilePath     string `yaml:"PublicCaCertFilePath"`
+	DomainSuffix       string `yaml:"PublicDomainSuffix"`
 
 	CraneBaseDir         string `yaml:"CraneBaseDir"`
 	CranedGoUnixSockPath string `yaml:"CranedGoUnixSockPath"`

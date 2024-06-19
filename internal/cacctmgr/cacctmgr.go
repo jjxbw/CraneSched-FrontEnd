@@ -35,7 +35,7 @@ import (
 
 var (
 	userUid uint32
-	stub    protos.CraneCtldClient
+	stub    protos.CraneCtldPublicClient
 )
 
 type ServerAddr struct {

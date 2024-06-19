@@ -34,7 +34,7 @@ import (
 )
 
 var (
-	stub protos.CraneCtldClient
+	stub protos.CraneCtldPublicClient
 )
 
 func ShowNodes(nodeName string, queryAll bool) util.CraneCmdError {
