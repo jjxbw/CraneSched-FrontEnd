@@ -224,9 +224,9 @@ CforedCranedStateMachineLoop:
 			if cranedReq.Type != protos.StreamCforedTaskIORequest_CRANED_REGISTER {
 				log.Fatal("[Cfored<->Craned] Expect CRANED_REGISTER")
 			}
-			log.Debugf("[Cfored<->Craned] Receive CranedReg from %s", cranedId)
 
 			cranedId = cranedReq.GetPayloadRegisterReq().GetCranedId()
+			log.Debugf("[Cfored<->Craned] Receive CranedReg from %s", cranedId)
 			gCranedChanKeeper.cranedUpAndSetMsgToCranedChannel(cranedId, pendingCrunReqToCranedChannel)
 
 			reply = &protos.StreamCforedTaskIOReply{
