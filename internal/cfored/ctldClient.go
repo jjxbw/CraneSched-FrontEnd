@@ -193,6 +193,9 @@ CtldClientStateMachineLoop:
 						case protos.StreamCtldReply_TASK_CANCEL_REQUEST:
 							taskId = ctldReply.GetPayloadTaskCancelRequest().TaskId
 							procId = ctldReply.GetPayloadTaskCancelRequest().ProcId
+						case protos.StreamCtldReply_TASK_COMPLETION_ACK_REPLY:
+							taskId = ctldReply.GetPayloadTaskCompletionAck().TaskId
+							procId = uint32(DefaultProcId)
 						}
 
 						log.Tracef("[Cfored<->Ctld] %s message received. Task Id %d", ctldReply.Type, taskId)
